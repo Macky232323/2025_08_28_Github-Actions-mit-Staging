@@ -1,27 +1,31 @@
-name: Deploy to Prod
+name: Deploy Website to AWS EC2
 
 on:
   push:
     tags:
       - 'v*.*.*'
-
 jobs:
   deploy:
+    name: Deploy to EC2 Instances
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to Prod EC2s
-        env:
-          EC2_IPS: ${{ secrets.PROD_EC2_IPS }}
+      - name: Setup SSH Key
         run: |
-          for ip in $(echo $EC2_IPS | tr "," "\n"); do
-            echo "Deploying to $ip..."
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$ip "sudo rm -rf /var/www/html/* && sudo cp -r index.html /var/www/html/ && sudo systemctl restart nginx"
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IPS }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to each server
+        run: |
+          for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
+            scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
+            ssh -i ~/.ssh/id_rsa ubuntu@$ip '
+              SERVER_HOSTNAME=$(hostname)
+              sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html > /home/ubuntu/index.processed.html
+              sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
+            '
           done

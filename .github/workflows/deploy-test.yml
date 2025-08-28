@@ -20,4 +20,8 @@ jobs:
       - name: Deploy to Test EC2
         run: |
           scp -o StrictHostKeyChecking=no index.html ubuntu@${{ secrets.TEST_EC2_IP }}:/home/ubuntu/
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} "sudo cp /home/ubuntu/index.html /var/www/html/index.html && sudo systemctl restart nginx"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} '
+            SERVER_HOSTNAME=$(hostname)
+            sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html | sudo tee /var/www/html/index.html > /dev/null
+            sudo systemctl restart nginx
+          '
