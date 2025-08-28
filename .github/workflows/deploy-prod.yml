@@ -1,31 +1,32 @@
-name: Deploy Website to AWS EC2
+name: Deploy to Prod
 
 on:
   push:
     tags:
       - 'v*.*.*'
+
 jobs:
   deploy:
-    name: Deploy to EC2 Instances
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IPS }} >> ~/.ssh/known_hosts
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to each server
+      - name: Deploy to Prod EC2s
+        env:
+          EC2_IPS: ${{ secrets.PROD_EC2_IPS }}
         run: |
-          for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
-            scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
-            ssh -i ~/.ssh/id_rsa ubuntu@$ip '
+          for ip in $(echo $EC2_IPS | tr "," "\n"); do
+            echo "Deploying to $ip..."
+            scp -o StrictHostKeyChecking=no index.html ubuntu@$ip:/home/ubuntu/
+            ssh -o StrictHostKeyChecking=no ubuntu@$ip "
               SERVER_HOSTNAME=$(hostname)
-              sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html > /home/ubuntu/index.processed.html
-              sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
-            '
+              sed 's/__HOSTNAME__/'"$SERVER_HOSTNAME"'/g' /home/ubuntu/index.html | sudo tee /var/www/html/index.html > /dev/null
+              sudo systemctl restart nginx
+            "
           done
