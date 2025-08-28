@@ -3,14 +3,14 @@ name: Deploy to Test
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -19,4 +19,5 @@ jobs:
 
       - name: Deploy to Test EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.TEST_EC2_IP }} "sudo rm -rf /var/www/html/* && sudo cp -r $GITHUB_WORKSPACE/index.html /var/www/html/ && sudo systemctl restart nginx"
+          scp -o StrictHostKeyChecking=no index.html ubuntu@${{ secrets.TEST_EC2_IP }}:/var/www/html/
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} "sudo systemctl restart nginx"
