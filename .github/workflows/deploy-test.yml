@@ -19,4 +19,4 @@ jobs:
 
       - name: Deploy to Test EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.TEST_EC2_IP }} "sudo rm -rf /var/www/html/* && sudo cp -r index.html /var/www/html/ && sudo systemctl restart nginx"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.TEST_EC2_IP }} "sudo rm -rf /var/www/html/* && sudo cp -r $GITHUB_WORKSPACE/index.html /var/www/html/ && sudo systemctl restart nginx"
