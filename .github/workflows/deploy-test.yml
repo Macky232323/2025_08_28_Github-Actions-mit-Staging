@@ -19,5 +19,5 @@ jobs:
 
       - name: Deploy to Test EC2
         run: |
-          scp -o StrictHostKeyChecking=no index.html ubuntu@${{ secrets.TEST_EC2_IP }}:/home/ubuntu/
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} "sudo cp /home/ubuntu/index.html /var/www/html/ && sudo systemctl restart nginx"
+          scp -o StrictHostKeyChecking=no index.html ubuntu@${{ secrets.TEST_EC2_IP }}:/var/www/html/index.html
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} "sudo systemctl restart nginx"
