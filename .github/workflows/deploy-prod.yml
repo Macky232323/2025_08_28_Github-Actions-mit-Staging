@@ -23,8 +23,8 @@ jobs:
         run: |
           for ip in $(echo $EC2_IPS | tr "," "\n"); do
             echo "Deploying to $ip..."
-            scp -o StrictHostKeyChecking=no index.html ubuntu@${{ secrets.TEST_EC2_IP }}:/home/ubuntu/
-            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_EC2_IP }} '
+            scp -o StrictHostKeyChecking=no index.html ubuntu@${ip}:/home/ubuntu/
+            ssh -o StrictHostKeyChecking=no ubuntu@${ip} '
               SERVER_HOSTNAME=$(hostname)
               sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html | sudo tee /var/www/html/index.html > /dev/null
               sudo systemctl restart nginx
