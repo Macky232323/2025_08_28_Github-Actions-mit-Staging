@@ -1,0 +1,27 @@
+name: Deploy to Prod
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to Prod EC2s
+        env:
+          EC2_IPS: ${{ secrets.PROD_EC2_IPS }}
+        run: |
+          for ip in $(echo $EC2_IPS | tr "," "\n"); do
+            echo "Deploying to $ip..."
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$ip "sudo rm -rf /var/www/html/* && sudo cp -r index.html /var/www/html/ && sudo systemctl restart nginx"
+          done
